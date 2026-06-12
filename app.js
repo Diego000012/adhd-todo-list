@@ -22,6 +22,10 @@ function clearPass() {
   try { localStorage.removeItem(PASS_KEY); } catch (e) {}
 }
 
+function makeTask(text) {
+  return { id: newId(), text, done: false, children: [], loading: false, collapsed: false };
+}
+
 const lockEl = document.getElementById('lock');
 const passInput = document.getElementById('pass');
 const enterBtn = document.getElementById('enter');
@@ -264,6 +268,21 @@ function renderItem(task) {
   const row = document.createElement('div');
   row.className = 'item-row';
 
+  const hasKids = task.children && task.children.length;
+
+  // toggle de plegar/desplegar (ocupa espacio siempre, para alinear)
+  const tog = document.createElement('button');
+  tog.className = 'toggle';
+  if (hasKids) {
+    if (!task.collapsed) tog.classList.add('open');
+    tog.textContent = '▸';
+    tog.title = task.collapsed ? 'Mostrar subtareas' : 'Ocultar subtareas';
+    tog.onclick = () => { task.collapsed = !task.collapsed; save(); renderTasks(); };
+  } else {
+    tog.classList.add('hidden');
+    tog.disabled = true;
+  }
+
   const cb = document.createElement('input');
   cb.type = 'checkbox';
   cb.className = 'check';
@@ -274,6 +293,15 @@ function renderItem(task) {
   lbl.className = 'label';
   lbl.textContent = task.text;
 
+  // contador de subtareas completadas (solo si tiene hijas)
+  let count = null;
+  if (hasKids) {
+    count = document.createElement('span');
+    count.className = 'count';
+    const done = task.children.filter(c => c.done).length;
+    count.textContent = done + '/' + task.children.length;
+  }
+
   const more = document.createElement('button');
   more.className = 'more';
   more.textContent = task.loading ? '…' : '🌶️ más';
@@ -283,18 +311,22 @@ function renderItem(task) {
     try {
       const subs = await breakDown(task.text);
       task.children = subs.map(makeTask);
+      task.collapsed = false;            // al desglosar, mostramos las nuevas hijas
     } catch (e) {
-      alert('No se pudo desglosar: ' + e.message);
+      if (e.message !== 'No autorizado') alert('No se pudo desglosar: ' + e.message);
     }
     task.loading = false; save(); renderTasks();
   };
 
+  row.appendChild(tog);
   row.appendChild(cb);
   row.appendChild(lbl);
+  if (count) row.appendChild(count);
   row.appendChild(more);
   li.appendChild(row);
 
-  if (task.children && task.children.length) {
+  // las hijas solo se dibujan si NO está plegada
+  if (hasKids && !task.collapsed) {
     const ul = document.createElement('ul');
     ul.className = 'children';
     task.children.forEach(c => ul.appendChild(renderItem(c)));
@@ -317,23 +349,22 @@ async function handleGo() {
   emptyEl.style.display = 'block';
   emptyEl.className = 'note';
   emptyEl.innerHTML = 'Picando la tarea<span class="dots"></span>';
-  listEl.innerHTML = '';
 
   try {
     const subs = await breakDown(text);
-    activeList().tasks = subs.map(makeTask);
+    const parent = makeTask(text);          // la tarea que escribiste = madre
+    parent.children = subs.map(makeTask);   // los pasos = subtareas
+    activeList().tasks.push(parent);        // se agrega al final (no borra lo anterior)
     taskInput.value = '';
     save();
     renderTasks();
   } catch (e) {
-    activeList().tasks = [];
-    emptyEl.className = 'note error';
-    emptyEl.textContent = 'Algo falló: ' + e.message;
+    if (e.message !== 'No autorizado') alert('No se pudo desglosar: ' + e.message);
+    renderTasks();                          // volver a mostrar lo que ya había
   } finally {
     goBtn.disabled = false;
   }
 }
-
 goBtn.onclick = handleGo;
 taskInput.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleGo();
