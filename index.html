@@ -7,6 +7,11 @@
     • styles.css   ← apariencia
     • app.js       ← lógica
 
+  Para que funcione, los tres deben estar en la MISMA carpeta
+  (y en GitHub Pages, en la misma carpeta del repo).
+
+  ⚠️ La URL de tu Worker ahora se edita en  app.js  (constante
+     WORKER_URL, al inicio del archivo).
 -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -68,6 +73,20 @@
   <ul id="list"></ul>
   <div class="note" id="empty">Tus pasos aparecerán aquí. 🌶️</div>
 </div>
+
+<!-- BOTÓN FLOTANTE + PANEL DE ARCHIVO -->
+<button class="archive-fab" id="archiveBtn" title="Ver archivo">🗄️ Archivo</button>
+
+<div class="archive-backdrop" id="archiveBackdrop"></div>
+<aside class="archive-panel" id="archivePanel">
+  <div class="archive-head">
+    <h3>Archivo</h3>
+    <button class="archive-close" id="archiveClose" title="Cerrar">✕</button>
+  </div>
+  <p class="archive-hint">Desmarca una tarea para devolverla a la lista.</p>
+  <ul class="archive-list" id="archiveList"></ul>
+  <div class="archive-empty" id="archiveEmpty">Nada archivado todavía.</div>
+</aside>
 
 <!-- Lógica: se carga al final para que el HTML ya exista cuando corre -->
 <script src="app.js"></script>
