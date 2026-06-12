@@ -3,7 +3,7 @@
 // ============================================================
 //  Después de publicar el Worker, Cloudflare te da una URL como
 //  https://magic-todo.tuusuario.workers.dev  — pégala aquí.
-const WORKER_URL = "https://TU-WORKER.workers.dev";
+const WORKER_URL = "https://autumn-bar-b81f.90-tolls-rip.workers.dev";
 
 // ============================================================
 //  LOGIN  —  la contraseña se verifica en el Worker
