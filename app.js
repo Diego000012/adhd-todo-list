@@ -3,7 +3,7 @@
 // ============================================================
 //  Después de publicar el Worker, Cloudflare te da una URL como
 //  https://magic-todo.tuusuario.workers.dev  — pégala aquí.
-const WORKER_URL = "https://autumn-bar-b81f.90-tolls-rip.workers.dev";
+const WORKER_URL = "https://TU-WORKER.workers.dev";
 
 // ============================================================
 //  LOGIN  —  la contraseña se verifica en el Worker
@@ -20,10 +20,6 @@ function setPass(p) {
 }
 function clearPass() {
   try { localStorage.removeItem(PASS_KEY); } catch (e) {}
-}
-
-function makeTask(text) {
-  return { id: newId(), text, done: false, children: [], loading: false, collapsed: false };
 }
 
 const lockEl = document.getElementById('lock');
@@ -127,14 +123,19 @@ function load() {
   let saved = null;
   try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
   if (saved) {
-    try { state = JSON.parse(saved); return; } catch (e) {}
+    try {
+      state = JSON.parse(saved);
+      // Migración: las listas viejas no tienen cajón de archivo. Se lo damos.
+      state.lists.forEach(l => { if (!l.archived) l.archived = []; });
+      return;
+    } catch (e) {}
   }
   // Estado inicial por defecto
   state = {
     nextId: 1,
     activeId: 1,
     lists: [
-      { id: 1, name: 'Trabajo', context: '', tasks: [] },
+      { id: 1, name: 'Trabajo', context: '', tasks: [], archived: [] },
     ],
   };
   state.nextId = 2;
@@ -168,7 +169,7 @@ function renderLists() {
     const name = prompt('Nombre de la nueva lista:', 'Nueva lista');
     if (name === null) return;
     const id = newId();
-    state.lists.push({ id, name: name.trim() || 'Nueva lista', context: '', tasks: [] });
+    state.lists.push({ id, name: name.trim() || 'Nueva lista', context: '', tasks: [], archived: [] });
     state.activeId = id;
     save(); renderAll();
   };
@@ -247,7 +248,7 @@ async function breakDown(text) {
 //  TAREAS
 // ============================================================
 function makeTask(text) {
-  return { id: newId(), text, done: false, children: [], loading: false };
+  return { id: newId(), text, done: false, children: [], loading: false, collapsed: false };
 }
 
 const listEl  = document.getElementById('list');
@@ -258,7 +259,7 @@ function renderTasks() {
   emptyEl.style.display = tasks.length ? 'none' : 'block';
   if (!tasks.length) { emptyEl.className = 'note'; emptyEl.textContent = 'Tus pasos aparecerán aquí. 🌶️'; }
   listEl.innerHTML = '';
-  tasks.forEach((t, i) => listEl.appendChild(renderItem(t, tasks, i)));
+  tasks.forEach((t, i) => listEl.appendChild(renderItem(t, tasks, i, true)));
 }
 
 // Propaga un estado de completado hacia abajo: la tarea y TODAS
@@ -278,6 +279,8 @@ function recalcDone(task) {
 }
 
 // Mueve una tarea dentro de su grupo de hermanas (dir: -1 sube, +1 baja).
+// Como solo intercambia dentro del mismo array, una subtarea nunca
+// puede saltar a otro nivel: queda restringida a sus hermanas.
 function moveItem(siblings, index, dir) {
   const j = index + dir;
   if (j < 0 || j >= siblings.length) return;
@@ -286,7 +289,7 @@ function moveItem(siblings, index, dir) {
   renderTasks();
 }
 
-function renderItem(task, siblings, index) {
+function renderItem(task, siblings, index, isRoot) {
   const li = document.createElement('li');
   li.className = 'item' + (task.done ? ' completed' : '');
 
@@ -370,13 +373,23 @@ function renderItem(task, siblings, index) {
   if (count) row.appendChild(count);
   row.appendChild(move);
   row.appendChild(more);
+
+  // Botón Archivar: solo en tareas RAÍZ y solo cuando están completas.
+  if (isRoot && task.done) {
+    const arch = document.createElement('button');
+    arch.className = 'archive-task-btn';
+    arch.textContent = 'Archivar';
+    arch.onclick = () => archiveTask(task);
+    row.appendChild(arch);
+  }
+
   li.appendChild(row);
 
-  // las hijas solo se dibujan si NO está plegada
+  // las hijas solo se dibujan si NO está plegada (y nunca son raíz)
   if (hasKids && !task.collapsed) {
     const ul = document.createElement('ul');
     ul.className = 'children';
-    task.children.forEach((c, i) => ul.appendChild(renderItem(c, task.children, i)));
+    task.children.forEach((c, i) => ul.appendChild(renderItem(c, task.children, i, false)));
     li.appendChild(ul);
   }
   return li;
@@ -412,10 +425,89 @@ async function handleGo() {
     goBtn.disabled = false;
   }
 }
+
 goBtn.onclick = handleGo;
 taskInput.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleGo();
 });
+
+// ============================================================
+//  ARCHIVO
+// ============================================================
+const archiveBtn      = document.getElementById('archiveBtn');
+const archivePanel    = document.getElementById('archivePanel');
+const archiveBackdrop = document.getElementById('archiveBackdrop');
+const archiveClose    = document.getElementById('archiveClose');
+const archiveListEl   = document.getElementById('archiveList');
+const archiveEmptyEl  = document.getElementById('archiveEmpty');
+
+// Archivar una tarea raíz: sale de la lista activa y entra al archivo.
+function archiveTask(task) {
+  const list = activeList();
+  list.tasks = list.tasks.filter(t => t.id !== task.id);
+  list.archived.push(task);
+  save();
+  renderTasks();
+  renderArchive();
+  pulseArchive();   // avisa con un destello que algo entró al archivo
+}
+
+// Desarchivar: vuelve a la lista activa, desmarcada (ella y sus subtareas).
+function unarchive(task) {
+  const list = activeList();
+  list.archived = list.archived.filter(t => t.id !== task.id);
+  setDoneDeep(task, false);
+  list.tasks.push(task);
+  save();
+  renderTasks();
+  renderArchive();
+}
+
+// Destello del botón flotante.
+function pulseArchive() {
+  archiveBtn.classList.remove('pulse');
+  void archiveBtn.offsetWidth;        // truco para reiniciar la animación
+  archiveBtn.classList.add('pulse');
+}
+
+// Dibujar el contenido del panel (archivadas de la lista activa).
+function renderArchive() {
+  const archived = activeList().archived || [];
+  archiveEmptyEl.style.display = archived.length ? 'none' : 'block';
+  archiveListEl.innerHTML = '';
+  archived.forEach(task => {
+    const li = document.createElement('li');
+    li.className = 'archive-item';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'check';
+    cb.checked = true;
+    cb.title = 'Devolver a la lista';
+    cb.onchange = () => unarchive(task);
+
+    const lbl = document.createElement('span');
+    lbl.className = 'archive-label';
+    lbl.textContent = task.text;
+
+    li.appendChild(cb);
+    li.appendChild(lbl);
+    archiveListEl.appendChild(li);
+  });
+}
+
+function openArchive() {
+  renderArchive();
+  archivePanel.classList.add('open');
+  archiveBackdrop.classList.add('open');
+}
+function closeArchive() {
+  archivePanel.classList.remove('open');
+  archiveBackdrop.classList.remove('open');
+}
+archiveBtn.onclick = openArchive;
+archiveClose.onclick = closeArchive;
+archiveBackdrop.onclick = closeArchive;
 
 // ============================================================
 //  REDIBUJAR TODO  +  ARRANQUE
@@ -424,6 +516,7 @@ function renderAll() {
   renderLists();
   syncCtxPanel();
   renderTasks();
+  renderArchive();
 }
 
 load();
