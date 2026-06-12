@@ -410,3 +410,117 @@ textarea#task::placeholder { color: #CECECE; }
 }
 .move button:hover:not(:disabled) { color: var(--ink); }
 .move button:disabled { opacity: .25; cursor: default; }
+
+/* --- Botón "Archivar" en cada tarea raíz completa --- */
+.archive-task-btn {
+  border: none;
+  background: var(--spark);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: background .15s ease, transform .1s ease;
+}
+.archive-task-btn:hover { background: #226e6b; }
+.archive-task-btn:active { transform: scale(.94); }
+
+/* --- Botón flotante "Archivo" --- */
+.archive-fab {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  z-index: 40;
+  border: none;
+  background: var(--surface);
+  color: var(--lav);
+  border: 1px solid var(--line);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 11px 18px;
+  border-radius: 100px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(38,38,37,.12);
+  transition: transform .12s ease, box-shadow .2s ease;
+}
+.archive-fab:hover { transform: translateY(-2px); }
+
+/* destello cuando algo se archiva */
+.archive-fab.pulse { animation: fabPulse .6s ease; }
+@keyframes fabPulse {
+  0%   { background: var(--surface); transform: scale(1); }
+  35%  { background: var(--spark-dim); transform: scale(1.12); }
+  100% { background: var(--surface); transform: scale(1); }
+}
+
+/* --- Panel lateral del archivo --- */
+.archive-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(13,13,13,.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+  z-index: 45;
+}
+.archive-backdrop.open { opacity: 1; pointer-events: auto; }
+
+.archive-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: min(360px, 90vw);
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: -8px 0 30px rgba(38,38,37,.10);
+  z-index: 46;
+  transform: translateX(100%);
+  transition: transform .28s ease;
+  padding: 24px 22px;
+  overflow-y: auto;
+}
+.archive-panel.open { transform: translateX(0); }
+
+.archive-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.archive-head h3 {
+  font-family: 'Bricolage Grotesque', serif;
+  font-weight: 700;
+  font-size: 22px;
+  margin: 0;
+}
+.archive-close {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--muted);
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.archive-close:hover { color: var(--ink); background: var(--bg); }
+.archive-hint { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
+
+.archive-list { list-style: none; margin: 0; padding: 0; }
+.archive-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 13px;
+  margin-bottom: 8px;
+}
+.archive-label { flex: 1; font-size: 14px; color: var(--done); }
+.archive-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 24px 8px; }
