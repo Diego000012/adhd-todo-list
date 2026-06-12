@@ -261,6 +261,22 @@ function renderTasks() {
   tasks.forEach((t, i) => listEl.appendChild(renderItem(t, tasks, i)));
 }
 
+// Propaga un estado de completado hacia abajo: la tarea y TODAS
+// sus descendientes (hijas, nietas, etc.) toman el mismo valor.
+function setDoneDeep(task, value) {
+  task.done = value;
+  if (task.children) task.children.forEach(c => setDoneDeep(c, value));
+}
+
+// Recalcula de abajo hacia arriba: una madre queda marcada solo si
+// TODAS sus hijas lo están. Se corre sobre todo el árbol.
+function recalcDone(task) {
+  if (task.children && task.children.length) {
+    task.children.forEach(recalcDone);
+    task.done = task.children.every(c => c.done);
+  }
+}
+
 // Mueve una tarea dentro de su grupo de hermanas (dir: -1 sube, +1 baja).
 function moveItem(siblings, index, dir) {
   const j = index + dir;
@@ -296,7 +312,12 @@ function renderItem(task, siblings, index) {
   cb.type = 'checkbox';
   cb.className = 'check';
   cb.checked = task.done;
-  cb.onchange = () => { task.done = cb.checked; save(); renderTasks(); };
+  cb.onchange = () => {
+    setDoneDeep(task, cb.checked);              // hacia abajo: marca/desmarca todas sus subtareas
+    activeList().tasks.forEach(recalcDone);     // hacia arriba: cada madre refleja a sus hijas
+    save();
+    renderTasks();
+  };
 
   const lbl = document.createElement('div');
   lbl.className = 'label';
