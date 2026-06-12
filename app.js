@@ -258,10 +258,19 @@ function renderTasks() {
   emptyEl.style.display = tasks.length ? 'none' : 'block';
   if (!tasks.length) { emptyEl.className = 'note'; emptyEl.textContent = 'Tus pasos aparecerán aquí. 🌶️'; }
   listEl.innerHTML = '';
-  tasks.forEach(t => listEl.appendChild(renderItem(t)));
+  tasks.forEach((t, i) => listEl.appendChild(renderItem(t, tasks, i)));
 }
 
-function renderItem(task) {
+// Mueve una tarea dentro de su grupo de hermanas (dir: -1 sube, +1 baja).
+function moveItem(siblings, index, dir) {
+  const j = index + dir;
+  if (j < 0 || j >= siblings.length) return;
+  [siblings[index], siblings[j]] = [siblings[j], siblings[index]];
+  save();
+  renderTasks();
+}
+
+function renderItem(task, siblings, index) {
   const li = document.createElement('li');
   li.className = 'item' + (task.done ? ' completed' : '');
 
@@ -318,10 +327,27 @@ function renderItem(task) {
     task.loading = false; save(); renderTasks();
   };
 
+  // flechas para reordenar (solo entre hermanas)
+  const move = document.createElement('div');
+  move.className = 'move';
+  const up = document.createElement('button');
+  up.textContent = '▲';
+  up.title = 'Subir';
+  up.disabled = index === 0;
+  up.onclick = () => moveItem(siblings, index, -1);
+  const down = document.createElement('button');
+  down.textContent = '▼';
+  down.title = 'Bajar';
+  down.disabled = index === siblings.length - 1;
+  down.onclick = () => moveItem(siblings, index, 1);
+  move.appendChild(up);
+  move.appendChild(down);
+
   row.appendChild(tog);
   row.appendChild(cb);
   row.appendChild(lbl);
   if (count) row.appendChild(count);
+  row.appendChild(move);
   row.appendChild(more);
   li.appendChild(row);
 
@@ -329,7 +355,7 @@ function renderItem(task) {
   if (hasKids && !task.collapsed) {
     const ul = document.createElement('ul');
     ul.className = 'children';
-    task.children.forEach(c => ul.appendChild(renderItem(c)));
+    task.children.forEach((c, i) => ul.appendChild(renderItem(c, task.children, i)));
     li.appendChild(ul);
   }
   return li;
