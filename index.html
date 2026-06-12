@@ -10,8 +10,10 @@
      se pierda al refrescar.
    • Ya NO llama a Anthropic directo: llama a TU Worker de
      Cloudflare, que esconde la API key.
--->
 
+  ⚠️ UNA SOLA COSA QUE DEBES EDITAR: la constante WORKER_URL,
+     más abajo en el <script>. Pega ahí la URL de tu Worker.
+-->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
@@ -305,13 +307,99 @@
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
   }
+
+  /* --- Pantalla de LOGIN --- */
+  .lock {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 50;
+  }
+  .lock-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+  }
+  .lock-card .emoji { font-size: 34px; }
+  .lock-card h2 {
+    font-family: 'Bricolage Grotesque', serif;
+    font-weight: 700;
+    font-size: 24px;
+    margin: 10px 0 4px;
+  }
+  .lock-card p { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
+  .lock-card input {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 13px;
+    font: inherit;
+    font-size: 16px;
+    background: var(--bg);
+    outline: none;
+    text-align: center;
+  }
+  .lock-card input:focus { border-color: var(--spark); }
+  .lock-card button {
+    width: 100%;
+    margin-top: 12px;
+    border: none;
+    background: var(--spark);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 12px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: background .2s ease;
+  }
+  .lock-card button:hover { background: #226e6b; }
+  .lock-card button:disabled { opacity: .5; cursor: wait; }
+  .lock-error { color: var(--chili); font-size: 13px; margin: 12px 0 0; min-height: 16px; }
+
+  /* botón discreto de cerrar sesión */
+  .logout {
+    border: none;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+  }
+  .logout:hover { color: var(--chili); }
 </style>
+
+<!-- PANTALLA DE LOGIN (se oculta cuando la contraseña es correcta) -->
+<div class="lock" id="lock">
+  <div class="lock-card">
+    <div class="emoji">🌶️</div>
+    <h2>Tu Magic To-Do</h2>
+    <p>Escribe la contraseña para entrar.</p>
+    <input id="pass" type="password" placeholder="Contraseña" autocomplete="current-password" />
+    <button id="enter">Entrar</button>
+    <p class="lock-error" id="lockError"></p>
+  </div>
+</div>
 
 <div class="wrap">
   <header>
     <p class="eyebrow">byDiego</p>
     <h1>Pica la <span class="spark">tarea</span> en bocados.</h1>
     <p class="sub">Escribe algo grande o difuso. Elige cuánto detalle quieres con los ajíes y deja que se convierta en pasos pequeños.</p>
+    <p style="margin:12px 0 0;"><button class="logout" id="logout">Cerrar sesión</button></p>
   </header>
 
   <!-- PESTAÑAS DE LISTAS (se dibujan con JS) -->
@@ -340,7 +428,7 @@
         <div class="peppers" id="peppers"></div>
         <span class="spice-label" id="spiceLabel"></span>
       </div>
-      <button class="go" id="go">Desglosar</button>
+      <button class="go" id="go">Desglosar ✨</button>
     </div>
   </div>
 
@@ -356,6 +444,93 @@
   //  Después de publicar el Worker, Cloudflare te da una URL como
   //  https://magic-todo.tuusuario.workers.dev  — pégala aquí.
   const WORKER_URL = "https://autumn-bar-b81f.90-tolls-rip.workers.dev";
+
+  // ============================================================
+  //  LOGIN  —  la contraseña se verifica en el Worker
+  // ============================================================
+  //  La guardamos en el navegador (en TU dispositivo, no en el
+  //  código público) y la mandamos en cada llamada al Worker.
+  const PASS_KEY = 'magic-todo-pass';
+
+  function getPass() {
+    try { return localStorage.getItem(PASS_KEY) || ''; } catch (e) { return ''; }
+  }
+  function setPass(p) {
+    try { localStorage.setItem(PASS_KEY, p); } catch (e) {}
+  }
+  function clearPass() {
+    try { localStorage.removeItem(PASS_KEY); } catch (e) {}
+  }
+
+  const lockEl = document.getElementById('lock');
+  const passInput = document.getElementById('pass');
+  const enterBtn = document.getElementById('enter');
+  const lockError = document.getElementById('lockError');
+
+  function showLock(message) {
+    lockEl.style.display = 'flex';
+    lockError.textContent = message || '';
+    passInput.value = '';
+    passInput.focus();
+  }
+  function hideLock() { lockEl.style.display = 'none'; }
+
+  // Llamada central al Worker: añade la contraseña y maneja el 401.
+  async function callWorker(payload) {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-App-Password": getPass(),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    // 401 = contraseña incorrecta o vencida → de vuelta al login.
+    if (res.status === 401) {
+      clearPass();
+      showLock('Contraseña incorrecta.');
+      throw new Error('No autorizado');
+    }
+
+    if (!res.ok) {
+      let msg = 'HTTP ' + res.status;
+      try { const e = await res.json(); if (e.error) msg = e.error; } catch (e) {}
+      throw new Error(msg);
+    }
+    return res.json();
+  }
+
+  // Intentar entrar: manda un ping de verificación al Worker.
+  async function tryLogin(pw) {
+    enterBtn.disabled = true;
+    lockError.textContent = 'Verificando…';
+    setPass(pw);
+    try {
+      await callWorker({ verify: true });   // si la clave es mala, lanza y vuelve al login
+      hideLock();
+      lockError.textContent = '';
+    } catch (e) {
+      // callWorker ya mostró el error si fue 401
+      if (e.message !== 'No autorizado') lockError.textContent = 'Error: ' + e.message;
+    } finally {
+      enterBtn.disabled = false;
+    }
+  }
+
+  enterBtn.onclick = () => {
+    const pw = passInput.value.trim();
+    if (!pw) { passInput.focus(); return; }
+    tryLogin(pw);
+  };
+  passInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') enterBtn.click();
+  });
+
+  document.getElementById('logout').onclick = () => {
+    clearPass();
+    showLock('Sesión cerrada.');
+  };
 
   // ============================================================
   //  PICANTE (igual que antes)
@@ -499,19 +674,7 @@
     const [min, max] = SPICE_RANGE[spice];
     const ctx = activeList().context || '';
 
-    const res = await fetch(WORKER_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ task: text, context: ctx, min, max }),
-    });
-
-    if (!res.ok) {
-      let msg = 'HTTP ' + res.status;
-      try { const e = await res.json(); if (e.error) msg = e.error; } catch (e) {}
-      throw new Error(msg);
-    }
-
-    const data = await res.json();
+    const data = await callWorker({ task: text, context: ctx, min, max });
     if (!Array.isArray(data.steps)) throw new Error('Formato inesperado');
     return data.steps;
   }
@@ -628,4 +791,13 @@
   load();
   renderPeppers();
   renderAll();
+
+  // Si ya hay contraseña guardada, entramos directo. Si no, login.
+  // (Si la contraseña guardada estuviera mal, el primer desglose
+  //  devolvería 401 y te mandaría de vuelta al login automáticamente.)
+  if (getPass()) {
+    hideLock();
+  } else {
+    showLock('');
+  }
 </script>
