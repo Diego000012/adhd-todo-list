@@ -431,7 +431,11 @@ async function handleGo() {
 
 goBtn.onclick = handleGo;
 taskInput.addEventListener('keydown', e => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleGo();
+  // Enter crea la tarea. Shift+Enter (o Cmd/Ctrl+Enter) hace salto de línea.
+  if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+    e.preventDefault();   // evita que se inserte el salto de línea
+    handleGo();
+  }
 });
 
 // ============================================================
