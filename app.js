@@ -372,15 +372,18 @@ function renderItem(task, siblings, index, isRoot) {
   row.appendChild(lbl);
   if (count) row.appendChild(count);
   row.appendChild(move);
-  row.appendChild(more);
 
-  // Botón Archivar: solo en tareas RAÍZ y solo cuando están completas.
+  // En una tarea RAÍZ completa, "Archivar" reemplaza a "🌶️ más".
+  // En el resto de casos, se muestra "🌶️ más" como siempre.
+  
   if (isRoot && task.done) {
     const arch = document.createElement('button');
     arch.className = 'archive-task-btn';
     arch.textContent = 'Archivar';
     arch.onclick = () => archiveTask(task);
     row.appendChild(arch);
+  } else {
+    row.appendChild(more);
   }
 
   li.appendChild(row);
