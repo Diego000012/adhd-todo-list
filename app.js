@@ -885,23 +885,15 @@ async function cloudSave() {
   }
 }
 
-// Sincronización completa: baja lo más reciente de la nube y, si lo tuyo
-// es más nuevo (o la nube está vacía), sube lo local. Bajar + subir.
+// Sincronización completa: baja lo más reciente, o sube lo local si es más nuevo.
 async function fullSync() {
-  setSyncStatus('saving');
-  try {
-    const cloud = await cloudLoad();
-    if (cloud && (cloud.updatedAt || 0) > (state.updatedAt || 0)) {
-      state = cloud;                                   // la nube es más nueva → la bajamos
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
-      renderAll();
-      setSyncStatus('saved');
-    } else {
-      await callWorker({ action: 'save', data: state });   // local más nuevo (o nube vacía) → subimos
-      setSyncStatus('saved');
-    }
-  } catch (e) {
-    setSyncStatus('error');
+  const cloud = await cloudLoad();
+  if (cloud && (cloud.updatedAt || 0) > (state.updatedAt || 0)) {
+    state = cloud;                                   // nube más nueva → bajar
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+    renderAll();
+  } else {
+    await callWorker({ action: 'save', data: state });   // local más nuevo → subir
   }
 }
 
@@ -932,8 +924,31 @@ async function initApp() {
   }
 }
 
-// Botón "Sincronizar ahora": fuerza el respaldo sin esperar los 10s.
-syncBtn.onclick = () => { clearTimeout(syncTimer); fullSync(); };
+// Íconos del botón de sincronizar
+const ICON_SYNC = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`;
+const ICON_SYNCED = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 15-5.5 5.5L9 18"/><path d="M5.516 16.07A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 3.501 7.327"/></svg>`;
+let syncedTimer = null;
+
+async function doSync() {
+  clearTimeout(syncedTimer);
+  syncBtn.classList.remove('synced');
+  syncBtn.innerHTML = ICON_SYNC;
+  syncBtn.classList.add('spinning');         // empieza a girar
+  try {
+    await fullSync();
+    syncBtn.classList.remove('spinning');
+    syncBtn.innerHTML = ICON_SYNCED;          // muestra el check
+    syncBtn.classList.add('synced');
+    syncedTimer = setTimeout(() => {          // a los 5s vuelve al ícono normal
+      syncBtn.innerHTML = ICON_SYNC;
+      syncBtn.classList.remove('synced');
+    }, 5000);
+  } catch (e) {
+    syncBtn.classList.remove('spinning');
+    syncBtn.innerHTML = ICON_SYNC;            // si falla, vuelve al ícono normal
+  }
+}
+syncBtn.onclick = () => { clearTimeout(syncTimer); doSync(); };
 
 load();
 renderAll();
