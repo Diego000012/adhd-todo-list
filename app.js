@@ -885,6 +885,26 @@ async function cloudSave() {
   }
 }
 
+// Sincronización completa: baja lo más reciente de la nube y, si lo tuyo
+// es más nuevo (o la nube está vacía), sube lo local. Bajar + subir.
+async function fullSync() {
+  setSyncStatus('saving');
+  try {
+    const cloud = await cloudLoad();
+    if (cloud && (cloud.updatedAt || 0) > (state.updatedAt || 0)) {
+      state = cloud;                                   // la nube es más nueva → la bajamos
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+      renderAll();
+      setSyncStatus('saved');
+    } else {
+      await callWorker({ action: 'save', data: state });   // local más nuevo (o nube vacía) → subimos
+      setSyncStatus('saved');
+    }
+  } catch (e) {
+    setSyncStatus('error');
+  }
+}
+
 // Respaldo automático con "respiro" de 10s: cada cambio reinicia el reloj.
 function scheduleCloudSync() {
   setSyncStatus('pending');
@@ -913,7 +933,7 @@ async function initApp() {
 }
 
 // Botón "Sincronizar ahora": fuerza el respaldo sin esperar los 10s.
-syncBtn.onclick = () => { clearTimeout(syncTimer); cloudSave(); };
+syncBtn.onclick = () => { clearTimeout(syncTimer); fullSync(); };
 
 load();
 renderAll();
