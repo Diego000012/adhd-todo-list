@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap');
 
 :root {
   --bg:        #F6F5F4;
@@ -13,6 +13,7 @@
   --done:      #9C94AE;
   --radius: 14px;
   --shadow: 0 1px 2px rgba(38, 38, 37,.03), 0 8px 24px rgba(38, 38, 37,.03);
+  --font-size: 14px;
 }
 
 * { box-sizing: border-box; }
@@ -21,8 +22,9 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   line-height: 1.5;
+  font-size: var(--font-size);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
@@ -36,7 +38,7 @@ body {
 /* --- Encabezado --- */
 header { margin-bottom: 22px; }
 .eyebrow {
-  font-size: 13px;
+  font-size: calc(var(--font-size) - 1px);
   letter-spacing: .14em;
   text-transform: lowercase;
   color: var(--lav);
@@ -52,7 +54,7 @@ h1 {
   letter-spacing: -.02em;
 }
 h1 .spark { color: var(--spark); }
-.sub { color: var(--muted); font-size: 16px; margin: 0; max-width: 46ch; }
+.sub { color: var(--muted); font-size: calc(var(--font-size) + 2px); margin: 0; max-width: 46ch; }
 
 /* --- Pestañas de LISTAS --- */
 .lists {
@@ -66,7 +68,7 @@ h1 .spark { color: var(--spark); }
   background: var(--surface);
   color: var(--muted);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--font-size);
   font-weight: 600;
   padding: 7px 15px;
   border-radius: 100px;
@@ -78,69 +80,16 @@ h1 .spark { color: var(--spark); }
 .list-chip.active { color: #fff; background: var(--lav); border-color: var(--lav); }
 .list-chip.add { color: var(--spark); border-style: dashed; }
 
-/* --- Panel de CONTEXTO de la lista (plegable) --- */
-details.ctx {
-  margin-top: 12px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-details.ctx > summary {
-  list-style: none;
-  cursor: pointer;
-  padding: 12px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--lav);
-  user-select: none;
-}
-details.ctx > summary::-webkit-details-marker { display: none; }
-.ctx-body { padding: 0 16px 16px; }
-.ctx-body label {
-  display: block;
-  font-size: 12px;
-  color: var(--muted);
-  margin: 8px 0 4px;
-}
-.ctx-body input,
-.ctx-body textarea {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 9px 11px;
-  font: inherit;
-  font-size: 14px;
-  color: var(--ink);
-  background: var(--bg);
-  outline: none;
-  resize: vertical;
-}
-.ctx-body textarea { min-height: 64px; }
-.ctx-body input:focus,
-.ctx-body textarea:focus { border-color: var(--spark); }
-.ctx-hint { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
-.ctx-delete {
-  margin-top: 14px;
-  border: none;
-  background: none;
-  color: var(--chili);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-}
-.ctx-delete:hover { text-decoration: underline; }
-
 /* --- Caja de entrada --- */
 .composer {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 18px;
+  padding: 13px 13px;
   margin-top: 18px;
 }
 textarea#task {
@@ -149,55 +98,46 @@ textarea#task {
   outline: none;
   resize: none;
   font: inherit;
-  font-size: 17px;
+  font-size: 15px;
+  line-height: 1.5;
   color: var(--ink);
   background: transparent;
-  min-height: 50px;
+  padding: 0px 10px;
+  min-height: 22px;
+  max-height: 140px;
+  overflow-y: auto;
 }
 textarea#task::placeholder { color: #CECECE; }
 
-/* --- Control de PICANTE --- */
-.spice-row {
+/* Barra de acciones (abajo del texto). Por ahora solo el botón enviar;
+   el lado izquierdo queda libre para futuros botones. */
+.actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-top: 8px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--line);
-  flex-wrap: wrap;
 }
-.spice { display: flex; align-items: center; gap: 10px; }
-.peppers { display: flex; gap: 2px; }
-.pepper {
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 22px;
-  line-height: 1;
-  padding: 4px;
-  filter: grayscale(1) opacity(.18);
-  transition: transform .15s ease, filter .2s ease;
-}
-.pepper:hover { transform: translateY(-2px) scale(1.1); }
-.pepper.on { filter: none; }
-.spice-label {
-  font-size: 13px;
-  color: var(--muted);
-  min-width: 90px;
-  font-weight: 500;
+.actions-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* --- Botón principal --- */
 .go {
+  flex-shrink: 0;
   border: none;
   background: var(--spark);
   color: #fff;
   font: inherit;
   font-weight: 600;
-  font-size: 15px;
-  padding: 11px 20px;
-  border-radius: 100px;
+  font-size: 17px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 25%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: background .2s ease, transform .1s ease;
 }
@@ -205,36 +145,123 @@ textarea#task::placeholder { color: #CECECE; }
 .go:active { transform: scale(.94); }
 .go:disabled { opacity: .5; cursor: not-allowed; }
 
+/* Gris cuando el campo está vacío (mientras se ve el placeholder). */
+#task:placeholder-shown + .actions .go,
+#task:placeholder-shown + .actions .go:hover {
+  background: var(--line);
+  color: var(--muted);
+  cursor: default;
+}
+
+/* --- Selector de Prioridad --- */
+.priority-selector {
+  position: relative;
+  margin-left: auto;
+}
+
+.priority-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin-left: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 25%;
+  transition: color .2s ease, background .15s ease, filter .15s ease;
+}
+.priority-btn:hover {
+  color: var(--ink);
+  background: #f3f3f3;
+}
+
+/* Con prioridad: el fondo ya tiene color; en hover solo lo oscurecemos. */
+.priority-btn.has-prio:hover { filter: brightness(0.9); }
+
+.priority-btn svg { width: 13px; height: 13px; }
+
+.priority-btn.active {
+  color: var(--ink);
+  background: var(--line);
+}
+
+.priority-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-bottom: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 8px 0;
+  min-width: 140px;
+  display: none;
+  flex-direction: column;
+  z-index: 100;
+}
+
+.priority-menu.active { display: flex; }
+
+.priority-option {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 8px 12px;
+  text-align: left;
+  font: inherit;
+  font-size: var(--font-size);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background .15s ease;
+}
+.priority-option:hover { background: var(--spark-dim); }
+
+.priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 /* --- Lista de tareas --- */
 #list { margin-top: 26px; list-style: none; padding: 0; }
 .item { animation: rise .35s ease both; }
 @keyframes rise {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: none; }
-}
+} 
 .item-row {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 10px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 13px 14px;
-  margin-bottom: 8px;
+  padding: 13px 13px;
+  margin-bottom: 9px;
   box-shadow: var(--shadow);
 }
 .check {
   appearance: none;
-  width: 20px; height: 20px;
-  margin-top: 2px;
-  border: 2px solid var(--lav);
-  border-radius: 6px;
+  width: 18px; height: 18px;
+  margin-top: 4px;
+  margin-left: 5px;
+  border: 1.95px solid var(--prio, var(--lav));
+  border-radius: 5px;
   cursor: pointer;
   flex-shrink: 0;
   position: relative;
   transition: background .15s ease, border-color .15s ease;
 }
-.check:checked { background: var(--lav); border-color: var(--lav); }
+.check:checked { background: var(--prio, var(--lav)); border-color: var(--prio, var(--lav)); }
 .check:checked::after {
   content: '✓';
   position: absolute;
@@ -242,7 +269,9 @@ textarea#task::placeholder { color: #CECECE; }
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-size: 13px; font-weight: 700;
 }
-.label { flex: 1; font-size: 15px; padding-top: 1px; }
+.label { flex: 1; padding-top: 1px; }
+.label.clickable { cursor: pointer; }
+.label.clickable:hover { color: var(--spark); }
 .item.completed > .item-row .label {
   color: var(--done);
   text-decoration: line-through;
@@ -259,8 +288,16 @@ textarea#task::placeholder { color: #CECECE; }
   flex-shrink: 0;
   transition: background .15s ease;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.more:hover { background: var(--spark-dim); }
+.more svg { width: 16px; height: 16px; }
+.more:hover {
+  background: var(--spark);
+  color: #fff;
+  border-color: var(--spark);
+}
 .more:disabled { opacity: .5; cursor: wait; }
 .children {
   list-style: none;
@@ -361,24 +398,7 @@ textarea#task::placeholder { color: #CECECE; }
 }
 .logout:hover { color: var(--chili); }
 
-/* --- Toggle de plegar subtareas + contador --- */
-.toggle {
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1;
-  width: 16px;
-  flex-shrink: 0;
-  margin-top: 3px;
-  padding: 2px;
-  transition: transform .15s ease, color .15s ease;
-}
-.toggle:hover { color: var(--ink); }
-.toggle.open { transform: rotate(90deg); }
-.toggle.hidden { visibility: hidden; }
-
+/* --- Contador de subtareas --- */
 .count {
   font-size: 12px;
   color: var(--muted);
@@ -524,3 +544,393 @@ textarea#task::placeholder { color: #CECECE; }
 }
 .archive-label { flex: 1; font-size: 14px; color: var(--done); }
 .archive-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 24px 8px; }
+
+/* --- Menú contextual de la lista --- */
+.list-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 60;
+  display: none;
+}
+.list-menu-backdrop.open { display: block; }
+
+.list-menu {
+  position: fixed;
+  z-index: 61;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(38,38,37,.16);
+  padding: 8px;
+  width: 220px;
+  display: none;
+}
+.list-menu.open { display: block; }
+.list-menu-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: var(--font-size);
+  color: var(--ink);
+  background: var(--bg);
+  outline: none;
+}
+.list-menu-input:focus { border-color: var(--spark); }
+.list-menu-sep { height: 1px; background: var(--line); margin: 8px 0; }
+.list-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: var(--font-size);
+  color: var(--ink);
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.list-menu-item:hover { background: var(--bg); }
+.list-menu-item.danger { color: var(--chili); }
+
+/* --- Modal de contexto --- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(13,13,13,.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+  z-index: 70;
+}
+.modal-backdrop.open { opacity: 1; pointer-events: auto; }
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -48%);
+  width: min(440px, 92vw);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(38,38,37,.22);
+  padding: 24px;
+  z-index: 71;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.modal.open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
+.modal-title {
+  font-family: 'Bricolage Grotesque', serif;
+  font-weight: 700;
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+.modal-hint { font-size: 14px; color: var(--muted); margin: 0 0 14px; }
+.modal-textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 12px;
+  font: inherit;
+  font-size: var(--font-size);
+  color: var(--ink);
+  background: var(--bg);
+  outline: none;
+  resize: vertical;
+  min-height: 120px;
+}
+.modal-textarea:focus { border-color: var(--spark); }
+.modal-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+.modal-btn {
+  border: none;
+  background: var(--spark);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--font-size);
+  padding: 9px 20px;
+  border-radius: 100px;
+  cursor: pointer;
+}
+.modal-btn:hover { background: #226e6b; }
+
+/* --- Botón ⋮ (abrir canvas) en cada tarea --- */
+.dots-btn {
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 28px;
+  border-radius: 7px;
+  transition: background .15s ease, color .15s ease;
+}
+.dots-btn:hover { background: var(--line); color: var(--ink); }
+.dots-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* --- Panel de tarea (canvas), mismo patrón que el archivo --- */
+.canvas-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(13,13,13,.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+  z-index: 45;
+}
+.canvas-backdrop.open { opacity: 1; pointer-events: auto; }
+
+.canvas-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: min(420px, 92vw);
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: -8px 0 30px rgba(38,38,37,.10);
+  z-index: 46;
+  transform: translateX(100%);
+  transition: transform .28s ease;
+  padding: 20px 22px;
+  overflow-y: auto;
+}
+.canvas-panel.open { transform: translateX(0); }
+
+.canvas-close:hover { color: var(--ink); background: var(--bg); }
+.canvas-title {
+  width: 100%;
+  font-family: 'Bricolage Grotesque', serif;
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 18px 1px;
+  margin: 0;
+  resize: none;
+  outline: none;
+  overflow-y: hidden;
+  transition: border-color .15s ease, background .15s ease;
+}
+
+/* --- Barra de accesos rápidos del canvas --- */
+.canvas-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+.canvas-bar .check { margin: 0; }   /* reset de los márgenes que usa en la lista */
+
+.canvas-date {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1px 12px;
+  cursor: pointer;
+}
+
+.canvas-prio {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  border-radius: 8px;
+  padding: 4px 12px;
+}
+
+/* --- Menú de prioridad dentro del canvas --- */
+.canvas-prio-wrap { position: relative; }
+.canvas-prio { cursor: pointer; user-select: none; }
+.canvas-prio-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 8px 0;
+  min-width: 150px;
+  display: none;
+  flex-direction: column;
+  z-index: 100;
+}
+.canvas-prio-menu.active { display: flex; }
+.canvas-prio-wrap { position: relative; margin-left: auto; }
+
+/* --- Fecha del canvas --- */
+.canvas-date-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.canvas-date { cursor: pointer; }
+.canvas-date-clear {
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+.canvas-date-clear:hover { color: var(--chili); background: var(--bg); }
+/* el input nativo va oculto; solo lo usamos para abrir el calendario */
+.canvas-date-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.canvas-date-text { pointer-events: none; }
+.canvas-date-text.overdue { color: var(--chili); }
+
+/* --- Notas del canvas --- */
+.canvas-notes {
+  width: 100%;
+  font: inherit;
+  font-size: var(--font-size);
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 10px;
+  resize: none;
+  outline: none;
+  min-height: 90px;
+  max-height: 400px;
+  overflow-y: auto;
+  transition: border-color .15s ease;
+}
+.canvas-notes:focus { border-color: var(--spark); }
+.canvas-notes::placeholder { color: #CECECE; }
+
+/* --- Indicador de notas en la fila de la tarea --- */
+.note-indicator {
+  display: inline-flex;
+  align-items: center;
+  color: #9a9897;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.note-indicator svg { width: 15px; height: 15px; }
+
+/* --- Footer del canvas --- */
+.canvas-panel { display: flex; flex-direction: column; }
+.canvas-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.canvas-delete {
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.canvas-delete:hover { background: var(--chili); color: #fff; border-color: var(--chili); }
+.canvas-delete svg { width: 17px; height: 17px; }
+
+/* --- Botones del modal de confirmación --- */
+.modal-btn-cancel {
+  border: none;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--font-size);
+  padding: 9px 18px;
+  border-radius: 100px;
+  cursor: pointer;
+  margin-right: 8px;
+}
+.modal-btn-cancel:hover { background: var(--line); }
+.modal-btn-danger {
+  border: none;
+  background: var(--chili);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--font-size);
+  padding: 9px 18px;
+  border-radius: 100px;
+  cursor: pointer;
+}
+.modal-btn-danger:hover { filter: brightness(0.92); }
+
+/* --- Píldora flotante (toast) --- */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--ink);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 100px;
+  box-shadow: 0 8px 24px rgba(38,38,37,.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+  z-index: 200;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* --- Estado y botón de sincronización --- */
+.sync-status { font-size: 12px; color: var(--muted); margin-left: 10px; }
+.sync-btn {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 100px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+.sync-btn:hover { color: var(--ink); background: var(--bg); }
