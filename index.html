@@ -33,39 +33,63 @@
 
 <div class="wrap">
   <header>
-    <p class="eyebrow">byDiego</p>
-    <h1>Pica la <span class="spark">tarea</span> en bocados.</h1>
-    <p class="sub">Escribe algo grande o difuso. Elige cuánto detalle quieres con los ajíes y deja que se convierta en pasos pequeños.</p>
-    <p style="margin:12px 0 0;"><button class="logout" id="logout">Cerrar sesión</button></p>
+    <p style="margin:0;">
+      <button class="logout" id="logout">Log Out</button>
+      <span class="sync-status" id="syncStatus"></span>
+      <button class="sync-btn" id="syncBtn">Sincronizar</button>
+    </p>
   </header>
 
   <!-- PESTAÑAS DE LISTAS (se dibujan con JS) -->
   <div class="lists" id="lists"></div>
 
-  <!-- CONTEXTO de la lista activa (plegable) -->
-  <details class="ctx" id="ctxBox">
-    <summary>⚙︎ Contexto de esta lista</summary>
-    <div class="ctx-body">
-      <label for="listName">Nombre de la lista</label>
-      <input id="listName" type="text" placeholder="Ej: Trabajo" />
+  <!-- Menú contextual de la lista activa -->
+  <div class="list-menu-backdrop" id="listMenuBackdrop"></div>
+  <div class="list-menu" id="listMenu">
+    <input id="listName" class="list-menu-input" type="text" placeholder="Nombre de la lista" />
+    <div class="list-menu-sep"></div>
+    <button class="list-menu-item" id="editCtxBtn">Editar contexto</button>
+    <div class="list-menu-sep"></div>
+    <button class="list-menu-item danger" id="deleteList">Borrar lista</button>
+  </div>
 
-      <label for="listCtx">Contexto (se le pasa a Claude en cada desglose)</label>
-      <textarea id="listCtx" placeholder="Ej: Co-fundador de un estudio de diseño web y SEO. Orienta los pasos a clientes, entregables y operación del estudio."></textarea>
-      <p class="ctx-hint">Un párrafo corto. Cuanto mejor describas el ámbito, más afinados saldrán los pasos.</p>
-
-      <button class="ctx-delete" id="deleteList">Borrar esta lista</button>
+  <!-- Modal para editar el contexto de la lista -->
+  <div class="modal-backdrop" id="ctxModalBackdrop"></div>
+  <div class="modal" id="ctxModal">
+    <h3 class="modal-title">Contexto de la lista</h3>
+    <p class="modal-hint">Se le pasa a Claude en cada desglose. Un párrafo corto sobre el ámbito de esta lista.</p>
+    <textarea id="listCtx" class="modal-textarea" placeholder="Ej: Co-fundador de un estudio de diseño web y SEO. Orienta los pasos a clientes, entregables y operación del estudio."></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn" id="ctxModalClose">Listo</button>
     </div>
-  </details>
+  </div>
 
   <!-- CAJA DE ENTRADA -->
   <div class="composer">
-    <textarea id="task" placeholder="¿Qué necesitas hacer? Ej: organizar la mudanza"></textarea>
-    <div class="spice-row">
-      <div class="spice">
-        <div class="peppers" id="peppers"></div>
-        <span class="spice-label" id="spiceLabel"></span>
+    <textarea id="task" rows="1" placeholder="¿Qué necesitas hacer?"></textarea>
+    <div class="actions">
+      <div class="actions-left">
+        <div class="priority-selector">
+          <button class="priority-btn" id="priorityBtn" title="Establecer prioridad">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></svg>
+          </button>
+          <div class="priority-menu" id="priorityMenu">
+            <button class="priority-option" data-priority="no-priority" style="color: #757575;">
+              <span class="priority-dot" style="background: #757575;"></span> No priority
+            </button>
+            <button class="priority-option" data-priority="low" style="color: #60ABEB;">
+              <span class="priority-dot" style="background: #60ABEB;"></span> Low
+            </button>
+            <button class="priority-option" data-priority="medium" style="color: #FFC95E;">
+              <span class="priority-dot" style="background: #FFC95E;"></span> Medium
+            </button>
+            <button class="priority-option" data-priority="high" style="color: #F77363;">
+              <span class="priority-dot" style="background: #F77363;"></span> High
+            </button>
+          </div>
+        </div>
       </div>
-      <button class="go" id="go">Desglosar ✨</button>
+      <button class="go" id="go">→</button>
     </div>
   </div>
 
@@ -87,6 +111,52 @@
   <ul class="archive-list" id="archiveList"></ul>
   <div class="archive-empty" id="archiveEmpty">Nada archivado todavía.</div>
 </aside>
+
+<!-- PANEL DE TAREA (canvas) -->
+<div class="canvas-backdrop" id="canvasBackdrop"></div>
+<aside class="canvas-panel" id="canvasPanel">
+  <div class="canvas-bar">
+    <input type="checkbox" class="check" id="canvasCheck" />
+    <div class="canvas-date-wrap">
+      <label class="canvas-date">
+        <span class="canvas-date-text" id="canvasDate">Sin fecha</span>
+        <input type="date" id="canvasDateInput" class="canvas-date-input" />
+      </label>
+      <button class="canvas-date-clear" id="canvasDateClear" title="Quitar fecha">✕</button>
+    </div>
+    <div class="canvas-prio-wrap">
+      <span class="canvas-prio" id="canvasPrio"></span>
+      <div class="canvas-prio-menu" id="canvasPrioMenu">
+        <button class="priority-option" data-priority="no-priority" style="color:#757575;"><span class="priority-dot" style="background:#757575;"></span> Sin prioridad</button>
+        <button class="priority-option" data-priority="low" style="color:#60ABEB;"><span class="priority-dot" style="background:#60ABEB;"></span> Low</button>
+        <button class="priority-option" data-priority="medium" style="color:#FFC95E;"><span class="priority-dot" style="background:#FFC95E;"></span> Medium</button>
+        <button class="priority-option" data-priority="high" style="color:#F77363;"><span class="priority-dot" style="background:#F77363;"></span> High</button>
+      </div>
+    </div>
+  </div>
+  <textarea class="canvas-title" id="canvasTitle" rows="1" placeholder="Sin título"></textarea>
+  <textarea class="canvas-notes" id="canvasNotes" placeholder="Description..."></textarea>
+  <div class="canvas-footer">
+    <div class="canvas-footer-left"><!-- selector de lista (Paso 2) --></div>
+    <button class="canvas-delete" id="canvasDelete" title="Eliminar tarea">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+    </button>
+  </div>
+</aside>
+
+<!-- Confirmación de eliminar -->
+<div class="modal-backdrop" id="confirmBackdrop"></div>
+<div class="modal" id="confirmModal">
+  <h3 class="modal-title">¿Eliminar tarea?</h3>
+  <p class="modal-hint">Esta acción no se puede deshacer. Se eliminará la tarea y todas sus subtareas.</p>
+  <div class="modal-actions">
+    <button class="modal-btn-cancel" id="confirmCancel">Cancelar</button>
+    <button class="modal-btn-danger" id="confirmDelete">Eliminar</button>
+  </div>
+</div>
+
+<!-- Píldora flotante -->
+<div class="toast" id="toast"></div>
 
 <!-- Lógica: se carga al final para que el HTML ya exista cuando corre -->
 <script src="app.js"></script>
