@@ -934,3 +934,57 @@ textarea#task::placeholder { color: #CECECE; }
   margin-left: 10px;
 }
 .sync-btn:hover { color: var(--ink); background: var(--bg); }
+
+/* --- Navbar lateral izquierdo --- */
+body { padding-left: 64px; }   /* deja espacio para el navbar */
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 64px;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 0;
+  z-index: 30;
+}
+.navbar-logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--ink);   /* cambia el color del círculo a tu gusto */
+  flex-shrink: 0;
+}
+.navbar-bottom {
+  margin-top: auto;          /* empuja sync + logout hasta abajo */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+.nav-btn {
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s ease, color .15s ease;
+}
+.nav-btn:hover { background: var(--bg); color: var(--ink); }
+.nav-btn svg { width: 19px; height: 19px; }
+.nav-btn.logout-btn:hover { color: var(--chili); }
+
+/* Giro mientras sincroniza */
+@keyframes spin { to { transform: rotate(360deg); } }
+.nav-btn.spinning svg { animation: spin .8s linear infinite; }
+/* Color del check de "sincronizado" */
+.nav-btn.synced { color: var(--spark); }
