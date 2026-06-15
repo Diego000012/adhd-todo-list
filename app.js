@@ -640,6 +640,7 @@ const canvasBackdrop = document.getElementById('canvasBackdrop');
 const canvasTitle    = document.getElementById('canvasTitle');
 const canvasCheck    = document.getElementById('canvasCheck');
 const canvasDate     = document.getElementById('canvasDate');
+const canvasDateText = document.getElementById('canvasDateText');
 const canvasPrio     = document.getElementById('canvasPrio');
 let canvasTask = null;   // recuerda qué tarea está abierta
 
@@ -710,10 +711,10 @@ function renderCanvas() {
 
   // Fecha
   if (canvasTask.dueDate) {
-    canvasDate.textContent = formatDue(canvasTask.dueDate);
+    canvasDateText.textContent = formatDue(canvasTask.dueDate);
     canvasDateClear.style.display = '';
   } else {
-    canvasDate.textContent = 'Sin fecha';
+    canvasDateText.textContent = 'Sin fecha';
     canvasDateClear.style.display = 'none';
   }
 
@@ -758,14 +759,12 @@ canvasCheck.onchange = () => {
 };
 
 // Abrir el calendario al hacer clic en el chip de fecha.
-canvasDate.onclick = (e) => {
-  e.preventDefault();
+canvasDate.onclick = () => {
   if (!canvasTask) return;
   canvasDateInput.value = canvasTask.dueDate || '';
   try {
     canvasDateInput.showPicker();
   } catch (err) {
-    canvasDateInput.focus();
     canvasDateInput.click();
   }
 };
