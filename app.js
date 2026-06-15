@@ -757,11 +757,17 @@ canvasCheck.onchange = () => {
   renderCanvas();
 };
 
-// Abrir el calendario nativo al hacer clic en el chip de fecha.
-canvasDate.onclick = () => {
+// Abrir el calendario al hacer clic en el chip de fecha.
+canvasDate.onclick = (e) => {
+  e.preventDefault();
   if (!canvasTask) return;
   canvasDateInput.value = canvasTask.dueDate || '';
-  try { canvasDateInput.showPicker(); } catch (e) { canvasDateInput.click(); }
+  try {
+    canvasDateInput.showPicker();
+  } catch (err) {
+    canvasDateInput.focus();
+    canvasDateInput.click();
+  }
 };
 // Al elegir una fecha, se guarda y se muestra.
 canvasDateInput.onchange = () => {
