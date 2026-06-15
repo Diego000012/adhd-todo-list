@@ -1,6 +1,3 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
 <!--
   ============================================================
   MI MAGIC TO-DO  —  v3: código separado en 3 archivos
@@ -21,8 +18,6 @@
 
 <!-- Apariencia: se carga desde un archivo aparte -->
 <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
 
 <!-- PANTALLA DE LOGIN (se oculta cuando la contraseña es correcta) -->
 <div class="lock" id="lock">
@@ -35,7 +30,7 @@
     <p class="lock-error" id="lockError"></p>
   </div>
 </div>
-
+  
 <nav class="navbar">
   <div class="navbar-logo"></div>
   <div class="navbar-bottom">
@@ -132,10 +127,10 @@
   <div class="canvas-bar">
     <input type="checkbox" class="check" id="canvasCheck" />
     <div class="canvas-date-wrap">
-      <label class="canvas-date">
-        <span class="canvas-date-text" id="canvasDate">Sin fecha</span>
+      <div class="canvas-date" id="canvasDate">
+        <span class="canvas-date-text" id="canvasDateText">Sin fecha</span>
         <input type="date" id="canvasDateInput" class="canvas-date-input" />
-      </label>
+      </div>
       <button class="canvas-date-clear" id="canvasDateClear" title="Quitar fecha">✕</button>
     </div>
     <div class="canvas-prio-wrap">
@@ -174,5 +169,3 @@
 
 <!-- Lógica: se carga al final para que el HTML ya exista cuando corre -->
 <script src="app.js"></script>
-</body>
-</html>
