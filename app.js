@@ -299,8 +299,10 @@ function renderTasks() {
   const tasks = activeList().tasks;
   emptyEl.style.display = tasks.length ? 'none' : 'block';
   if (!tasks.length) { emptyEl.className = 'note'; emptyEl.textContent = 'Tus pasos aparecerán aquí. 🌶️'; }
-  listEl.innerHTML = '';
-  tasks.forEach((t, i) => listEl.appendChild(renderItem(t, tasks, i, true, [])));
+  const newUl = document.createElement('ul');
+  newUl.id = 'list';
+  tasks.forEach((t, i) => newUl.appendChild(renderItem(t, tasks, i, true, [])));
+  morphdom(listEl, newUl, { getNodeKey: el => el.dataset && el.dataset.id });
 }
 
 // Propaga un estado de completado hacia abajo: la tarea y TODAS
@@ -332,6 +334,7 @@ function moveItem(siblings, index, dir) {
 
 function renderItem(task, siblings, index, isRoot, trail) {
   const li = document.createElement('li');
+  li.dataset.id = task.id;
   li.className = 'item' + (task.done ? ' completed' : '');
 
   const row = document.createElement('div');
@@ -681,7 +684,11 @@ canvasTitle.addEventListener('input', () => {
   canvasTask.text = canvasTitle.value;
   growCanvasTitle();
   save();
-  renderTasks();
+  const li = listEl.querySelector(`[data-id="${canvasTask.id}"]`);
+  if (li) {
+    const lbl = li.querySelector(':scope > .item-row > .label');
+    if (lbl) lbl.textContent = canvasTask.text;
+  }
 });
 
 function closeCanvas() {
@@ -798,7 +805,23 @@ canvasNotes.addEventListener('input', () => {
   canvasTask.notes = canvasNotes.value;
   growNotes();
   save();
-  renderTasks();
+  const li = listEl.querySelector(`[data-id="${canvasTask.id}"]`);
+  if (li) {
+    const row = li.querySelector(':scope > .item-row');
+    const existing = row && row.querySelector('.note-indicator');
+    const hasNotes = canvasTask.notes && canvasTask.notes.trim();
+    if (hasNotes && !existing) {
+      const noteIcon = document.createElement('span');
+      noteIcon.className = 'note-indicator';
+      noteIcon.title = 'Tiene notas';
+      noteIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M12 2v4"/><path d="M16 2v4"/><rect width="16" height="18" x="4" y="4" rx="2"/><path d="M8 10h6"/><path d="M8 14h8"/><path d="M8 18h5"/></svg>`;
+      const insertBefore = row.querySelector('.count') || row.querySelector('.move');
+      if (insertBefore) row.insertBefore(noteIcon, insertBefore);
+      else row.appendChild(noteIcon);
+    } else if (!hasNotes && existing) {
+      existing.remove();
+    }
+  }
 });
 
 // ============================================================
