@@ -97,6 +97,15 @@
             </button>
           </div>
         </div>
+
+        <!-- Selector de fecha para la tarea (antes de enviarla) -->
+        <div class="date-selector">
+          <button class="date-btn" id="composerDateBtn" title="Establecer fecha">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+            <span class="date-btn-text" id="composerDateText"></span>
+          </button>
+          <input type="date" id="composerDateInput" class="composer-date-input" />
+        </div>
       </div>
       <button class="go" id="go">→</button>
     </div>
@@ -168,5 +177,4 @@
 <div class="toast" id="toast"></div>
 
 <!-- Lógica: se carga al final para que el HTML ya exista cuando corre -->
-<script src="https://cdn.jsdelivr.net/npm/morphdom@2.7.4/dist/morphdom.min.js"></script>
 <script src="app.js"></script>
