@@ -190,6 +190,51 @@ textarea#task::placeholder { color: #CECECE; }
   background: var(--line);
 }
 
+/* --- Selector de Fecha (composer) --- */
+.date-selector {
+  position: relative;
+}
+.date-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  height: 32px;
+  min-width: 32px;
+  padding: 0 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 25%;
+  transition: color .2s ease, background .15s ease, filter .15s ease;
+}
+.date-btn:hover { color: var(--ink); background: #f3f3f3; }
+.date-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.date-btn-text { font-size: 12px; font-weight: 600; white-space: nowrap; }
+
+/* Con fecha elegida: fondo de acento e icono/texto en blanco. */
+.date-btn.has-date {
+  background: var(--spark);
+  color: #fff;
+  border-radius: 16px;
+}
+.date-btn.has-date:hover { filter: brightness(0.92); background: var(--spark); }
+
+/* Input nativo: invisible, solo sirve para abrir el calendario del SO. */
+.composer-date-input {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
 .priority-menu {
   position: absolute;
   top: 100%;
@@ -233,7 +278,7 @@ textarea#task::placeholder { color: #CECECE; }
 
 /* --- Lista de tareas --- */
 #list { margin-top: 26px; list-style: none; padding: 0; }
-.item { animation: rise .35s ease both; }
+.item.rise { animation: rise .35s ease both; }
 @keyframes rise {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: none; }
@@ -299,12 +344,27 @@ textarea#task::placeholder { color: #CECECE; }
   border-color: var(--spark);
 }
 .more:disabled { opacity: .5; cursor: wait; }
+/* Acordeón: el wrap anima su altura con el truco de grid (0fr → 1fr),
+   que sí transiciona hasta una altura "auto" sin saltos. */
+.children-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows .28s ease;
+}
+.children-wrap.open { grid-template-rows: 1fr; }
+
+/* El que recorta debe ir "limpio" (sin padding ni borde): así colapsa
+   a 0 exacto y no se asoma ningún píxel de la primera subtarea. */
+.children-clip {
+  min-height: 0;     /* anula el min-height:auto de los items de grid */
+  overflow: hidden;
+}
+
 .children {
   list-style: none;
-  margin: 0 0 8px 0;
-  padding: 0 0 0 22px;
+  margin: 0 0 0 11px;
+  padding: 0 0 8px 22px;
   border-left: 2px solid var(--line);
-  margin-left: 11px;
 }
 
 /* --- Estados --- */
