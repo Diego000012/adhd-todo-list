@@ -299,10 +299,8 @@ function renderTasks() {
   const tasks = activeList().tasks;
   emptyEl.style.display = tasks.length ? 'none' : 'block';
   if (!tasks.length) { emptyEl.className = 'note'; emptyEl.textContent = 'Tus pasos aparecerán aquí. 🌶️'; }
-  const newUl = document.createElement('ul');
-  newUl.id = 'list';
-  tasks.forEach((t, i) => newUl.appendChild(renderItem(t, tasks, i, true, [])));
-  morphdom(listEl, newUl, { getNodeKey: el => el.dataset && el.dataset.id });
+  listEl.innerHTML = '';
+  tasks.forEach((t, i) => listEl.appendChild(renderItem(t, tasks, i, true, [])));
 }
 
 // Propaga un estado de completado hacia abajo: la tarea y TODAS
@@ -366,7 +364,15 @@ function renderItem(task, siblings, index, isRoot, trail) {
   if (hasKids) {
     lbl.classList.add('clickable');
     lbl.title = task.collapsed ? 'Expandir' : 'Contraer';
-    lbl.onclick = () => { task.collapsed = !task.collapsed; save(); renderTasks(); };
+    // Toggle dirigido: solo cambia la clase .open del wrap → la altura
+    // se anima por CSS. Nada de redibujar (que cortaría la animación).
+    lbl.onclick = () => {
+      task.collapsed = !task.collapsed;
+      save();
+      const wrap = li.querySelector(':scope > .children-wrap');
+      if (wrap) wrap.classList.toggle('open', !task.collapsed);
+      lbl.title = task.collapsed ? 'Expandir' : 'Contraer';
+    };
   }
 
   // contador de subtareas completadas (solo si tiene hijas)
@@ -396,6 +402,14 @@ function renderItem(task, siblings, index, isRoot, trail) {
       if (e.message !== 'No autorizado') alert('No se pudo desglosar: ' + e.message);
     }
     task.loading = false; save(); renderTasks();
+    // Anima la aparición de las hijas: el wrap se dibuja abierto, así que
+    // lo cerramos y lo reabrimos en el siguiente frame para que transicione.
+    const liEl = listEl.querySelector(`[data-id="${task.id}"]`);
+    const wrap = liEl && liEl.querySelector(':scope > .children-wrap');
+    if (wrap) {
+      wrap.classList.remove('open');
+      requestAnimationFrame(() => requestAnimationFrame(() => wrap.classList.add('open')));
+    }
   };
 
   // flechas para reordenar (solo entre hermanas)
@@ -451,12 +465,20 @@ function renderItem(task, siblings, index, isRoot, trail) {
 
   li.appendChild(row);
 
-  // las hijas solo se dibujan si NO está plegada (y nunca son raíz)
-  if (hasKids && !task.collapsed) {
+  // Las hijas SIEMPRE se dibujan (si las hay) dentro de un wrap acordeón.
+  // El estado plegado/desplegado lo controla la clase .open del wrap, así
+  // se puede animar la altura al expandir/contraer.
+  if (hasKids) {
+    const wrap = document.createElement('div');
+    wrap.className = 'children-wrap' + (task.collapsed ? '' : ' open');
+    const clip = document.createElement('div');
+    clip.className = 'children-clip';
     const ul = document.createElement('ul');
     ul.className = 'children';
     task.children.forEach((c, i) => ul.appendChild(renderItem(c, task.children, i, false, [...trail, task.text])));
-    li.appendChild(ul);
+    clip.appendChild(ul);
+    wrap.appendChild(clip);
+    li.appendChild(wrap);
   }
   return li;
 }
@@ -525,17 +547,67 @@ priorityOptions.forEach(option => {
 // Estado inicial del botón
 applyPriorityToBtn();
 
+// ============================================================
+//  SELECTOR DE FECHA DEL COMPOSER
+// ============================================================
+const composerDateBtn   = document.getElementById('composerDateBtn');
+const composerDateInput = document.getElementById('composerDateInput');
+const composerDateText  = document.getElementById('composerDateText');
+let currentDueDate = null;   // 'YYYY-MM-DD' o null, para la próxima tarea
+
+// Pinta el botón según haya o no fecha elegida.
+function applyDateToBtn() {
+  if (currentDueDate) {
+    const [y, m, d] = currentDueDate.split('-').map(Number);
+    composerDateText.textContent = MONTHS[m-1] + ' ' + d;
+    composerDateBtn.classList.add('has-date');
+    composerDateBtn.title = 'Fecha: ' + formatDue(currentDueDate) + ' — clic para cambiar';
+  } else {
+    composerDateText.textContent = '';
+    composerDateBtn.classList.remove('has-date');
+    composerDateBtn.title = 'Establecer fecha';
+  }
+}
+
+// Abrir el calendario nativo del sistema.
+composerDateBtn.onclick = (e) => {
+  e.stopPropagation();
+  composerDateInput.value = currentDueDate || '';
+  try { composerDateInput.showPicker(); } catch (err) { composerDateInput.click(); }
+};
+
+// Cierra el picker de forma contundente (mismo truco que en el canvas).
+function closeComposerDatePicker() {
+  composerDateInput.blur();
+  composerDateInput.style.display = 'none';
+  requestAnimationFrame(() => { composerDateInput.style.display = ''; });
+}
+
+function onComposerDatePicked() {
+  if (composerDateInput.value === (currentDueDate || '')) { closeComposerDatePicker(); return; }
+  currentDueDate = composerDateInput.value || null;
+  applyDateToBtn();
+  closeComposerDatePicker();
+}
+composerDateInput.onchange = onComposerDatePicked;
+composerDateInput.oninput  = onComposerDatePicked;
+
+applyDateToBtn();
+
 function handleGo() {
   const text = taskInput.value.trim();
   if (!text) { taskInput.focus(); return; }
 
   const task = makeTask(text);
   task.priority = currentPriority;
+  task.dueDate = currentDueDate;      // fecha elegida en el composer (o null)
   activeList().tasks.unshift(task);   // tarea suelta, al inicio
   taskInput.value = '';
   autoGrow();                                   // devuelve el cajón a su altura mínima
   currentPriority = 'no-priority';  // resetear prioridad
   applyPriorityToBtn();
+  currentDueDate = null;            // resetear fecha
+  applyDateToBtn();
   save();
   renderTasks();
 }
@@ -775,13 +847,28 @@ canvasDate.onclick = () => {
     canvasDateInput.click();
   }
 };
-// Al elegir una fecha, se guarda y se muestra.
-canvasDateInput.onchange = () => {
+// Cierra el calendario nativo de forma contundente: sacar el input del
+// render (display:none) por un frame obliga a cerrar el picker en cualquier
+// navegador/webview. Como es invisible (1px, opacity 0), no se ve nada.
+function closeDatePicker() {
+  canvasDateInput.blur();
+  canvasDateInput.style.display = 'none';
+  requestAnimationFrame(() => { canvasDateInput.style.display = ''; });
+}
+
+// Al elegir una fecha, se guarda, se muestra y se cierra el calendario.
+// Escuchamos 'change' e 'input' por si el navegador no dispara 'change'
+// hasta que el picker se cierra solo.
+function onDatePicked() {
   if (!canvasTask) return;
+  if (canvasDateInput.value === (canvasTask.dueDate || '')) { closeDatePicker(); return; }
   canvasTask.dueDate = canvasDateInput.value || null;   // 'YYYY-MM-DD' o null
   save();
   renderCanvas();
-};
+  closeDatePicker();
+}
+canvasDateInput.onchange = onDatePicked;
+canvasDateInput.oninput  = onDatePicked;
 // Quitar la fecha.
 canvasDateClear.onclick = (e) => {
   e.stopPropagation();
